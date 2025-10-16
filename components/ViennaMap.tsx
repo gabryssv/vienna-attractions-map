@@ -89,11 +89,11 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
                                 <h3 class="font-bold text-sm mb-2 text-white">
                                     ${attraction.name}
                                 </h3>
-                                <p class="text-xs text-gray-300 mb-2">
-                                    <span class="text-gray-500">Adres:</span> ${attraction.address}
+                                <p class="text-xs text-neutral-300 mb-2">
+                                    <span class="text-neutral-500">Adres:</span> ${attraction.address}
                                 </p>
-                                <p class="text-xs text-gray-400">
-                                    <span class="text-gray-500">Współrzędne:</span><br/>
+                                <p class="text-xs text-neutral-400">
+                                    <span class="text-neutral-500">Współrzędne:</span><br/>
                                     Szer: ${attraction.latitude.toFixed(6)}<br/>
                                     Dł: ${attraction.longitude.toFixed(6)}
                                 </p>
@@ -137,15 +137,15 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
                     const popup = marker.getPopup();
                     if (popup) {
                         popup.setHTML(`
-                            <div class="p-3 min-w-[220px] font-mono bg-gray-900 text-white">
+                            <div class="p-3 min-w-[220px] font-mono bg-neutral-900 text-white">
                                 <h3 class="font-bold text-sm mb-2 text-red-400">
                                     ${attraction.name}
                                 </h3>
-                                <p class="text-xs text-gray-300 mb-2">
-                                    <span class="text-gray-500">Adres:</span> ${attraction.address}
+                                <p class="text-xs text-neutral-300 mb-2">
+                                    <span class="text-neutral-500">Adres:</span> ${attraction.address}
                                 </p>
-                                <p class="text-xs text-gray-400">
-                                    <span class="text-gray-500">Współrzędne:</span><br/>
+                                <p class="text-xs text-neutral-400">
+                                    <span class="text-neutral-500">Współrzędne:</span><br/>
                                     Szer: ${attraction.latitude.toFixed(6)}<br/>
                                     Dł: ${attraction.longitude.toFixed(6)}
                                 </p>
@@ -179,11 +179,11 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
                                 <h3 class="font-bold text-sm mb-2 text-white">
                                     ${attraction.name}
                                 </h3>
-                                <p class="text-xs text-gray-300 mb-2">
-                                    <span class="text-gray-500">Adres:</span> ${attraction.address}
+                                <p class="text-xs text-neutral-300 mb-2">
+                                    <span class="text-neutral-500">Adres:</span> ${attraction.address}
                                 </p>
-                                <p class="text-xs text-gray-400">
-                                    <span class="text-gray-500">Współrzędne:</span><br/>
+                                <p class="text-xs text-neutral-400">
+                                    <span class="text-neutral-500">Współrzędne:</span><br/>
                                     Szer: ${attraction.latitude.toFixed(6)}<br/>
                                     Dł: ${attraction.longitude.toFixed(6)}
                                 </p>
@@ -196,7 +196,7 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
     }, [selectedAttraction]);
 
     return (
-        <div className="h-full w-full border border-gray-800 rounded-lg overflow-hidden">
+        <div className="h-full w-full border border-neutral-800 rounded-lg overflow-hidden">
             <div ref={mapContainer} className="h-full w-full" />
         </div>
     );
