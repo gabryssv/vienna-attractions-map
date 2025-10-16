@@ -9,7 +9,7 @@ interface AttractionListProps {
 
 export default function AttractionList({ selectedAttraction, onAttractionSelect }: AttractionListProps) {
     return (
-        <div className="bg-black border border-neutral-800 rounded-lg p-4 h-full overflow-y-auto scrollbar-hide font-mono">
+        <div className="bg-black border border-neutral-800 rounded-lg p-4 h-full overflow-y-auto scrollbar-hide font-mono touch-pan-y overscroll-contain">
             <h2 className="text-lg font-bold text-white mb-4">
                 Atrakcje
             </h2>
