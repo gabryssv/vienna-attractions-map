@@ -31,33 +31,27 @@ body {
   /* Safari and Chrome */
 }
 
-/* Custom styles for Leaflet popups in dark theme */
-.leaflet-popup-content-wrapper {
-  background: #111111 !important;
-  color: #ffffff !important;
-  border: 1px solid #333333 !important;
+/* Custom styles for MapLibre GL popups in dark theme */
+.maplibregl-popup-content {
+  background: transparent !important;
+  border: none !important;
   border-radius: 8px !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
-.leaflet-popup-tip {
-  background: #111111 !important;
-  border: 1px solid #333333 !important;
+.maplibregl-popup-tip {
+  border-top-color: #111111 !important;
 }
 
-.leaflet-popup-content {
-  margin: 0 !important;
-}
-
-.leaflet-container {
-  font-family: var(--font-geist-mono) !important;
-}
-
-/* Dark theme for attribution */
-.leaflet-control-attribution {
+/* MapLibre GL control styling */
+.maplibregl-ctrl-attrib {
   background: rgba(0, 0, 0, 0.8) !important;
   color: #ffffff !important;
+  font-family: var(--font-geist-mono) !important;
+  font-size: 10px !important;
 }
 
-.leaflet-control-attribution a {
+.maplibregl-ctrl-attrib a {
   color: #888888 !important;
 }

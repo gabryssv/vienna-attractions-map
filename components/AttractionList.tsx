@@ -9,7 +9,7 @@ interface AttractionListProps {
 
 export default function AttractionList({ selectedAttraction, onAttractionSelect }: AttractionListProps) {
     return (
-        <div className="bg-black border border-zinc-800 rounded-lg p-4 h-full overflow-y-auto scrollbar-hide font-mono">
+        <div className="bg-black border border-neutral-800 rounded-lg p-4 h-full overflow-y-auto scrollbar-hide font-mono">
             <h2 className="text-lg font-bold text-white mb-4">
                 Atrakcje
             </h2>
@@ -18,9 +18,9 @@ export default function AttractionList({ selectedAttraction, onAttractionSelect 
                 {viennaAttractions.map((attraction) => (
                     <div
                         key={attraction.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:border-zinc-600 ${selectedAttraction?.id === attraction.id
-                            ? 'border-green-500 bg-zinc-900 shadow-lg'
-                            : 'border-zinc-700 hover:bg-zinc-900'
+                        className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:border-neutral-600 ${selectedAttraction?.id === attraction.id
+                            ? 'border-green-500 bg-neutral-900 shadow-lg'
+                            : 'border-neutral-700 hover:bg-neutral-900'
                             }`}
                         onClick={() => onAttractionSelect?.(attraction)}
                     >
@@ -28,21 +28,21 @@ export default function AttractionList({ selectedAttraction, onAttractionSelect 
                             }`}>
                             {attraction.name}
                         </h3>
-                        <p className="text-xs text-zinc-400 mb-1">
+                        <p className="text-xs text-neutral-400 mb-1">
                             {attraction.address}
                         </p>
-                        <p className="text-xs text-zinc-500 font-mono">
+                        <p className="text-xs text-neutral-500 font-mono">
                             {attraction.latitude.toFixed(4)}, {attraction.longitude.toFixed(4)}
                         </p>
                     </div>
                 ))}
             </div>
 
-            <div className="mt-6 p-3 bg-zinc-900 border border-zinc-700 rounded-lg">
-                <p className="text-xs text-zinc-400">
+            <div className="mt-6 p-3 bg-neutral-900 border border-neutral-700 rounded-lg">
+                <p className="text-xs text-neutral-400">
                     <span className="text-white font-bold">{viennaAttractions.length}</span> atrakcji
                 </p>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                     Kliknij aby podświetlić na mapie
                 </p>
             </div>
