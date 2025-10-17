@@ -135,7 +135,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
         if (!map.current) return;
 
         setIsLoadingRoute(true);
-        
+
         try {
             const route = await googleDirectionsService.getPublicTransportRoute(
                 { lat: pointA.latitude, lng: pointA.longitude },
@@ -152,7 +152,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
             setRouteInfo(route);
 
             const routeId = 'transit-route';
-            
+
             // Remove existing route
             if (routeLayer.current) {
                 try {
@@ -280,7 +280,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
         setRouteInfo(fallbackRouteInfo);
 
         const routeId = 'fallback-route';
-        
+
         // Remove existing route
         if (routeLayer.current) {
             try {
@@ -326,7 +326,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
         });
 
         routeLayer.current = routeId;
-        
+
         // Fit map to show both points
         const bounds = new maplibregl.LngLatBounds();
         bounds.extend([pointA.longitude, pointA.latitude]);
@@ -347,7 +347,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                 // Determine marker style based on state
                 let markerColor = 'white';
                 let markerSize = { width: '25px', height: '41px', viewBox: '0 0 25 41' };
-                
+
                 if (attraction.customColor === 'yellow') {
                     markerColor = 'yellow';
                 } else if (isPointA) {
@@ -431,20 +431,20 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
     return (
         <div className="h-full w-full border border-neutral-800 rounded-lg overflow-hidden relative">
             <div ref={mapContainer} className="h-full w-full" />
-            
+
             {/* Route Loading Indicator */}
             {isLoadingRoute && (
                 <div className="absolute top-4 right-4 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg text-sm font-mono">
                     Szukanie trasy...
                 </div>
             )}
-            
+
             {/* Route Information Panel */}
             {routeInfo && routePointA && routePointB && !isLoadingRoute && (
                 <div className="absolute top-4 right-4 bg-black bg-opacity-90 text-white p-3 rounded-lg text-xs font-mono max-w-xs">
                     <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold text-sm">Trasa komunikacji publicznej</h3>
-                        <button 
+                        <button
                             onClick={() => {
                                 setRouteInfo(null);
                                 if (routeLayer.current && map.current) {
@@ -468,7 +468,7 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                         <p><span className="text-blue-400">Czas:</span> {routeInfo.duration}</p>
                         <p><span className="text-yellow-400">Dystans:</span> {routeInfo.distance}</p>
                     </div>
-                    
+
                     {/* Route Steps */}
                     <div className="max-h-32 overflow-y-auto custom-scrollbar">
                         <p className="text-neutral-400 mb-1">Instrukcje:</p>

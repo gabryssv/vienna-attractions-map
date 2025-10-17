@@ -60,7 +60,7 @@ export default function Home() {
 
           {/* Map */}
           <div className="flex-1 order-1 lg:order-2 min-h-[300px] lg:min-h-0">
-            <ViennaMap 
+            <ViennaMap
               selectedAttraction={selectedAttraction}
               routePointA={routePointA}
               routePointB={routePointB}
