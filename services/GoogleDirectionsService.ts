@@ -1,14 +1,35 @@
+export interface TransitDetails {
+    line: string;
+    lineName: string;
+    vehicle: string;
+    vehicleType: 'BUS' | 'TRAM' | 'SUBWAY' | 'RAIL' | 'FERRY' | 'CABLE_CAR' | 'GONDOLA_LIFT' | 'FUNICULAR' | 'OTHER';
+    departure: string;
+    arrival: string;
+    departureTime: Date;
+    arrivalTime: Date;
+    stops: number;
+    agencyName: string;
+    color?: string;
+    textColor?: string;
+    alternatives?: AlternativeTransit[];
+}
+
+export interface AlternativeTransit {
+    line: string;
+    lineName: string;
+    vehicle: string;
+    vehicleType: 'BUS' | 'TRAM' | 'SUBWAY' | 'RAIL' | 'FERRY' | 'CABLE_CAR' | 'GONDOLA_LIFT' | 'FUNICULAR' | 'OTHER';
+    departure: string;
+    color?: string;
+    textColor?: string;
+}
+
 export interface RouteStep {
     instructions: string;
     duration: string;
     distance: string;
     travelMode: string;
-    transitDetails?: {
-        line: string;
-        vehicle: string;
-        departure: string;
-        arrival: string;
-    };
+    transitDetails?: TransitDetails;
 }
 
 export interface RouteResult {
@@ -16,6 +37,9 @@ export interface RouteResult {
     distance: string;
     steps: RouteStep[];
     polyline: string;
+    departureTime: Date;
+    arrivalTime: Date;
+    alternatives?: RouteResult[];
 }
 
 class GoogleDirectionsService {
@@ -75,6 +99,9 @@ class GoogleDirectionsService {
             throw new Error('Failed to initialize Google Directions Service');
         }
 
+        // Ustaw aktualny czas jako punkt startowy
+        const now = new Date();
+
         return new Promise((resolve) => {
             this.directionsService!.route(
                 {
@@ -86,9 +113,12 @@ class GoogleDirectionsService {
                             google.maps.TransitMode.BUS,
                             google.maps.TransitMode.SUBWAY,
                             google.maps.TransitMode.TRAM,
+                            google.maps.TransitMode.RAIL, // Dodaj pociągi regionalne
                         ],
+                        departureTime: now, // Użyj aktualnego czasu
                         routingPreference: google.maps.TransitRoutePreference.FEWER_TRANSFERS,
                     },
+                    provideRouteAlternatives: true, // Pobierz alternatywne trasy
                     region: 'AT', // Austria
                     language: 'pl', // Polish language for instructions
                 },
@@ -105,17 +135,103 @@ class GoogleDirectionsService {
                                 travelMode: step.travel_mode,
                             };
 
-                            // Add transit details if available
+                            // Dodaj szczegółowe informacje o transporcie publicznym
                             if (step.transit) {
+                                const transit = step.transit;
+                                const line = transit.line;
+                                const vehicle = line?.vehicle;
+
+                                // Mapuj typ pojazdu na polskie nazwy
+                                const getVehicleTypeName = (type: string): string => {
+                                    switch (type) {
+                                        case 'BUS': return 'Autobus';
+                                        case 'TRAM': return 'Tramwaj';
+                                        case 'SUBWAY': return 'Metro';
+                                        case 'RAIL': return 'Pociąg';
+                                        case 'FERRY': return 'Prom';
+                                        case 'CABLE_CAR': return 'Kolejka linowa';
+                                        case 'GONDOLA_LIFT': return 'Gondola';
+                                        case 'FUNICULAR': return 'Kolej górska';
+                                        default: return 'Transport publiczny';
+                                    }
+                                };
+
                                 stepData.transitDetails = {
-                                    line: step.transit.line?.short_name || step.transit.line?.name || '',
-                                    vehicle: step.transit.line?.vehicle?.name || '',
-                                    departure: step.transit.departure_time?.text || '',
-                                    arrival: step.transit.arrival_time?.text || '',
+                                    line: line?.short_name || line?.name || '',
+                                    lineName: line?.name || '',
+                                    vehicle: getVehicleTypeName(vehicle?.type || ''),
+                                    vehicleType: (vehicle?.type as 'BUS' | 'TRAM' | 'SUBWAY' | 'RAIL' | 'FERRY' | 'CABLE_CAR' | 'GONDOLA_LIFT' | 'FUNICULAR') || 'OTHER',
+                                    departure: transit.departure_time?.text || '',
+                                    arrival: transit.arrival_time?.text || '',
+                                    departureTime: transit.departure_time?.value || new Date(),
+                                    arrivalTime: transit.arrival_time?.value || new Date(),
+                                    stops: transit.num_stops || 0,
+                                    agencyName: line?.agencies?.[0]?.name || '',
+                                    color: line?.color ? `#${line.color}` : undefined,
+                                    textColor: line?.text_color ? `#${line.text_color}` : undefined,
                                 };
                             }
 
                             return stepData;
+                        });
+
+                        // Przetwórz alternatywne trasy
+                        const alternatives: RouteResult[] = result.routes.slice(1).map((altRoute) => {
+                            const altLeg = altRoute.legs[0];
+                            const altSteps: RouteStep[] = altLeg.steps.map((altStep) => {
+                                const altStepData: RouteStep = {
+                                    instructions: altStep.instructions,
+                                    duration: altStep.duration?.text || '',
+                                    distance: altStep.distance?.text || '',
+                                    travelMode: altStep.travel_mode,
+                                };
+
+                                if (altStep.transit) {
+                                    const transit = altStep.transit;
+                                    const line = transit.line;
+                                    const vehicle = line?.vehicle;
+
+                                    const getVehicleTypeName = (type: string): string => {
+                                        switch (type) {
+                                            case 'BUS': return 'Autobus';
+                                            case 'TRAM': return 'Tramwaj';
+                                            case 'SUBWAY': return 'Metro';
+                                            case 'RAIL': return 'Pociąg';
+                                            case 'FERRY': return 'Prom';
+                                            case 'CABLE_CAR': return 'Kolejka linowa';
+                                            case 'GONDOLA_LIFT': return 'Gondola';
+                                            case 'FUNICULAR': return 'Kolej górska';
+                                            default: return 'Transport publiczny';
+                                        }
+                                    };
+
+                                    altStepData.transitDetails = {
+                                        line: line?.short_name || line?.name || '',
+                                        lineName: line?.name || '',
+                                        vehicle: getVehicleTypeName(vehicle?.type || ''),
+                                        vehicleType: (vehicle?.type as 'BUS' | 'TRAM' | 'SUBWAY' | 'RAIL' | 'FERRY' | 'CABLE_CAR' | 'GONDOLA_LIFT' | 'FUNICULAR') || 'OTHER',
+                                        departure: transit.departure_time?.text || '',
+                                        arrival: transit.arrival_time?.text || '',
+                                        departureTime: transit.departure_time?.value || new Date(),
+                                        arrivalTime: transit.arrival_time?.value || new Date(),
+                                        stops: transit.num_stops || 0,
+                                        agencyName: line?.agencies?.[0]?.name || '',
+                                        color: line?.color ? `#${line.color}` : undefined,
+                                        textColor: line?.text_color ? `#${line.text_color}` : undefined,
+                                    };
+                                }
+
+                                return altStepData;
+                            });
+
+                            return {
+                                duration: altLeg.duration?.text || '',
+                                distance: altLeg.distance?.text || '',
+                                steps: altSteps,
+                                polyline: altRoute.overview_polyline || '',
+                                departureTime: altLeg.departure_time?.value || new Date(),
+                                arrivalTime: altLeg.arrival_time?.value || new Date(),
+                            };
                         });
 
                         resolve({
@@ -123,6 +239,9 @@ class GoogleDirectionsService {
                             distance: leg.distance?.text || '',
                             steps,
                             polyline: route.overview_polyline || '',
+                            departureTime: leg.departure_time?.value || new Date(),
+                            arrivalTime: leg.arrival_time?.value || new Date(),
+                            alternatives,
                         });
                     } else {
                         console.error('Directions request failed:', status);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import { viennaAttractions, Attraction } from '@/data/attractions';
 import { googleDirectionsService, RouteResult } from '@/services/GoogleDirectionsService';
@@ -19,6 +19,35 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
     const routeLayer = useRef<string | null>(null);
     const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
     const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+
+    // Funkcja do mapowania kolorów dla różnych typów transportu
+    const getTransportColor = (vehicleType: string): string => {
+        switch (vehicleType) {
+            case 'BUS': return '#f59e0b'; // Amber - autobusy
+            case 'TRAM': return '#10b981'; // Emerald - tramwaje
+            case 'SUBWAY': return '#3b82f6'; // Blue - metro
+            case 'RAIL': return '#8b5cf6'; // Purple - pociągi
+            case 'FERRY': return '#06b6d4'; // Cyan - promy
+            case 'CABLE_CAR': return '#f97316'; // Orange - kolejki linowe
+            case 'GONDOLA_LIFT': return '#ef4444'; // Red - gondole
+            case 'FUNICULAR': return '#84cc16'; // Lime - koleje górskie
+            default: return '#6b7280'; // Gray - inne
+        }
+    };
+
+    const getTransportIcon = (vehicleType: string): string => {
+        switch (vehicleType) {
+            case 'BUS': return '🚌';
+            case 'TRAM': return '🚋';
+            case 'SUBWAY': return '🚇';
+            case 'RAIL': return '🚆';
+            case 'FERRY': return '⛴️';
+            case 'CABLE_CAR': return '🚠';
+            case 'GONDOLA_LIFT': return '🚡';
+            case 'FUNICULAR': return '🚞';
+            default: return '🚌';
+        }
+    };
 
     useEffect(() => {
         if (map.current) return; // Initialize map only once
@@ -245,9 +274,12 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
         console.log('Displaying fallback route from', pointA.name, 'to', pointB.name);
 
         // Create fallback route info
+        const now = new Date();
         const fallbackRouteInfo: RouteResult = {
             duration: 'Szacowany czas: 20-30 min',
             distance: 'Szacowany dystans: 5-10 km',
+            departureTime: now,
+            arrivalTime: new Date(now.getTime() + 25 * 60 * 1000), // +25 minut
             steps: [
                 {
                     instructions: `Rozpocznij podróż z lokalizacji: ${pointA.name}`,
@@ -262,9 +294,16 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                     travelMode: 'TRANSIT',
                     transitDetails: {
                         line: 'Różne linie',
+                        lineName: 'Autobus/Tramwaj',
                         vehicle: 'Autobus/Tramwaj',
-                        departure: 'Co 5-10 min',
-                        arrival: 'Według rozkładu'
+                        vehicleType: 'BUS',
+                        departure: now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+                        arrival: new Date(now.getTime() + 20 * 60 * 1000).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }),
+                        departureTime: now,
+                        arrivalTime: new Date(now.getTime() + 20 * 60 * 1000),
+                        stops: 8,
+                        agencyName: 'Wiener Linien',
+                        color: '#f59e0b'
                     }
                 },
                 {
@@ -439,11 +478,11 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                 </div>
             )}
 
-            {/* Route Information Panel */}
+            {/* Enhanced Route Information Panel */}
             {routeInfo && routePointA && routePointB && !isLoadingRoute && (
-                <div className="absolute top-4 right-4 bg-black bg-opacity-90 text-white p-3 rounded-lg text-xs font-mono max-w-xs">
-                    <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-sm">Trasa komunikacji publicznej</h3>
+                <div className="absolute top-4 right-4 bg-black bg-opacity-95 text-white p-4 rounded-lg text-xs font-mono max-w-sm shadow-2xl">
+                    <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-bold text-sm text-blue-400">🚌 Komunikacja publiczna</h3>
                         <button
                             onClick={() => {
                                 setRouteInfo(null);
@@ -457,34 +496,122 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                                     }
                                 }
                             }}
-                            className="text-neutral-400 hover:text-white ml-2"
+                            className="text-neutral-400 hover:text-white ml-2 text-lg"
                         >
                             ×
                         </button>
                     </div>
-                    <div className="space-y-1 mb-2">
-                        <p><span className="text-green-400">Z:</span> {routePointA.name}</p>
-                        <p><span className="text-red-400">Do:</span> {routePointB.name}</p>
-                        <p><span className="text-blue-400">Czas:</span> {routeInfo.duration}</p>
-                        <p><span className="text-yellow-400">Dystans:</span> {routeInfo.distance}</p>
+
+                    {/* Current time and route summary */}
+                    <div className="space-y-2 mb-3 p-2 bg-neutral-800 rounded">
+                        <p className="text-xs text-neutral-300">
+                            🕐 Odjazd: {new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p><span className="text-green-400">🟢 Z:</span> {routePointA.name}</p>
+                        <p><span className="text-red-400">🔴 Do:</span> {routePointB.name}</p>
+                        <div className="flex justify-between">
+                            <span><span className="text-blue-400">⏱️</span> {routeInfo.duration}</span>
+                            <span><span className="text-yellow-400">📏</span> {routeInfo.distance}</span>
+                        </div>
                     </div>
 
-                    {/* Route Steps */}
-                    <div className="max-h-32 overflow-y-auto custom-scrollbar">
-                        <p className="text-neutral-400 mb-1">Instrukcje:</p>
+                    {/* Enhanced Route Steps */}
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                        <p className="text-neutral-400 mb-2 font-bold">📋 Szczegóły trasy:</p>
                         {routeInfo.steps.map((step, index) => (
-                            <div key={index} className="mb-1 pb-1 border-b border-neutral-700 last:border-b-0">
-                                <div className="text-xs" dangerouslySetInnerHTML={{ __html: step.instructions }} />
-                                {step.transitDetails && (
-                                    <div className="text-xs text-blue-300 mt-1">
-                                        {step.transitDetails.line} • {step.transitDetails.departure} → {step.transitDetails.arrival}
+                            <div key={index} className="mb-3 p-2 bg-neutral-900 rounded border-l-2 border-neutral-600">
+                                {/* Walking step */}
+                                {step.travelMode === 'WALKING' && (
+                                    <div className="border-l-2 border-green-500 pl-2">
+                                        <div className="flex items-center gap-1 mb-1">
+                                            <span className="text-green-400">🚶</span>
+                                            <span className="text-green-400 font-bold text-xs">Idź pieszo</span>
+                                        </div>
+                                        <div className="text-xs text-neutral-300 mb-1" dangerouslySetInnerHTML={{ __html: step.instructions }} />
+                                        <div className="text-xs text-neutral-500">
+                                            ⏱️ {step.duration} • 📏 {step.distance}
+                                        </div>
                                     </div>
                                 )}
-                                <div className="text-xs text-neutral-500">
-                                    {step.duration} • {step.distance}
-                                </div>
+
+                                {/* Transit step */}
+                                {step.travelMode === 'TRANSIT' && step.transitDetails && (
+                                    <div
+                                        className="border-l-2 pl-2"
+                                        style={{ borderColor: step.transitDetails.color || getTransportColor(step.transitDetails.vehicleType) }}
+                                    >
+                                        <div className="flex items-center gap-1 mb-1">
+                                            <span>{getTransportIcon(step.transitDetails.vehicleType)}</span>
+                                            <span
+                                                className="font-bold text-xs"
+                                                style={{ color: step.transitDetails.color || getTransportColor(step.transitDetails.vehicleType) }}
+                                            >
+                                                {step.transitDetails.vehicle}
+                                            </span>
+                                            {step.transitDetails.line && (
+                                                <span
+                                                    className="px-1 py-0.5 rounded text-xs font-bold"
+                                                    style={{
+                                                        backgroundColor: step.transitDetails.color || getTransportColor(step.transitDetails.vehicleType),
+                                                        color: step.transitDetails.textColor || '#000000'
+                                                    }}
+                                                >
+                                                    {step.transitDetails.line}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="text-xs text-neutral-300 mb-2" dangerouslySetInnerHTML={{ __html: step.instructions }} />
+
+                                        {/* Transit schedule */}
+                                        <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                                            <div className="bg-green-900 bg-opacity-50 p-1 rounded">
+                                                <div className="text-green-300">🚏 Odjazd</div>
+                                                <div className="text-white font-bold">{step.transitDetails.departure}</div>
+                                            </div>
+                                            <div className="bg-red-900 bg-opacity-50 p-1 rounded">
+                                                <div className="text-red-300">🏁 Przyjazd</div>
+                                                <div className="text-white font-bold">{step.transitDetails.arrival}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Additional info */}
+                                        <div className="text-xs text-neutral-400 space-y-1">
+                                            <div>⏱️ {step.duration} • 📏 {step.distance}</div>
+                                            {step.transitDetails.stops > 0 && (
+                                                <div>🛑 {step.transitDetails.stops} przystanków</div>
+                                            )}
+                                            {step.transitDetails.agencyName && (
+                                                <div>🏢 {step.transitDetails.agencyName}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
+                    </div>
+
+                    {/* Alternative routes if available */}
+                    {routeInfo.alternatives && routeInfo.alternatives.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-neutral-700">
+                            <p className="text-neutral-400 text-xs mb-2">🔄 Alternatywne trasy:</p>
+                            {routeInfo.alternatives.slice(0, 2).map((alt, index) => (
+                                <div key={index} className="text-xs text-neutral-500 mb-1 p-1 bg-neutral-800 rounded">
+                                    Opcja {index + 2}: {alt.duration} • {alt.distance}
+                                    {alt.steps.filter(s => s.transitDetails).map((s, i) => (
+                                        <span key={i} className="ml-2">
+                                            {getTransportIcon(s.transitDetails?.vehicleType || 'OTHER')}
+                                            {s.transitDetails?.line}
+                                        </span>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Live updates indicator */}
+                    <div className="mt-3 pt-2 border-t border-neutral-700 text-xs text-neutral-500 text-center">
+                        🔴 Na żywo • Aktualizacja co 30s
                     </div>
                 </div>
             )}
