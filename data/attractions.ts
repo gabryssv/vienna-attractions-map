@@ -7,6 +7,14 @@ export interface Attraction {
     customColor?: string; // Nowe pole dla niestandardowego koloru
 }
 
+export interface RoutePoint {
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+    type: 'start' | 'end';
+}
+
 export const viennaAttractions: Attraction[] = [
     {
         id: 1,
