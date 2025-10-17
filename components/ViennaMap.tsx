@@ -67,18 +67,29 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
             el.style.height = '41px';
             el.style.cursor = 'pointer';
 
-            // Create white marker with transparent hole
-            el.innerHTML = `
-                <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <mask id="hole-${attraction.id}">
-                            <rect width="25" height="41" fill="white"/>
-                            <circle cx="12.5" cy="12.5" r="4" fill="black"/>
-                        </mask>
-                    </defs>
-                    <path fill="white" stroke="#d1d5db" stroke-width="1" mask="url(#hole-${attraction.id})" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
-                </svg>
-            `;
+            // Create marker based on custom color or default white
+            if (attraction.customColor === 'yellow') {
+                // Yellow marker for bus station
+                el.innerHTML = `
+                    <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#fbbf24" stroke="#f59e0b" stroke-width="1" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                        <circle fill="black" cx="12.5" cy="12.5" r="4"/>
+                    </svg>
+                `;
+            } else {
+                // White marker with transparent hole for other attractions
+                el.innerHTML = `
+                    <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <mask id="hole-${attraction.id}">
+                                <rect width="25" height="41" fill="white"/>
+                                <circle cx="12.5" cy="12.5" r="4" fill="black"/>
+                            </mask>
+                        </defs>
+                        <path fill="white" stroke="#d1d5db" stroke-width="1" mask="url(#hole-${attraction.id})" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                    </svg>
+                `;
+            }
 
             const marker = new maplibregl.Marker({ element: el })
                 .setLngLat([attraction.longitude, attraction.latitude])
@@ -123,15 +134,27 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
                 const isSelected = selectedAttraction?.id === attraction.id;
 
                 if (isSelected) {
-                    // Red marker for selected attraction
-                    el.style.width = '30px';
-                    el.style.height = '49px';
-                    el.innerHTML = `
-                        <svg width="30" height="49" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
-                            <path fill="#dc2626" stroke="#991b1b" stroke-width="1" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
-                            <circle fill="white" cx="12.5" cy="12.5" r="4"/>
-                        </svg>
-                    `;
+                    // Special handling for yellow markers - they stay yellow when selected
+                    if (attraction.customColor === 'yellow') {
+                        el.style.width = '30px';
+                        el.style.height = '49px';
+                        el.innerHTML = `
+                            <svg width="30" height="49" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#fbbf24" stroke="#f59e0b" stroke-width="1" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                                <circle fill="black" cx="12.5" cy="12.5" r="4"/>
+                            </svg>
+                        `;
+                    } else {
+                        // Red marker for other selected attractions
+                        el.style.width = '30px';
+                        el.style.height = '49px';
+                        el.innerHTML = `
+                            <svg width="30" height="49" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#dc2626" stroke="#991b1b" stroke-width="1" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                                <circle fill="white" cx="12.5" cy="12.5" r="4"/>
+                            </svg>
+                        `;
+                    }
 
                     // Update popup content for selected marker
                     const popup = marker.getPopup();
@@ -156,20 +179,33 @@ export default function ViennaMap({ selectedAttraction }: ViennaMapProps) {
                         `);
                     }
                 } else {
-                    // White marker with transparent hole for unselected attractions
-                    el.style.width = '25px';
-                    el.style.height = '41px';
-                    el.innerHTML = `
-                        <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <mask id="hole-${attraction.id}">
-                                    <rect width="25" height="41" fill="white"/>
-                                    <circle cx="12.5" cy="12.5" r="4" fill="black"/>
-                                </mask>
-                            </defs>
-                            <path fill="white" stroke="#d1d5db" stroke-width="1" mask="url(#hole-${attraction.id})" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
-                        </svg>
-                    `;
+                    // Return to original colors when not selected
+                    if (attraction.customColor === 'yellow') {
+                        // Yellow marker for bus station
+                        el.style.width = '25px';
+                        el.style.height = '41px';
+                        el.innerHTML = `
+                            <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#fbbf24" stroke="#f59e0b" stroke-width="1" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                                <circle fill="black" cx="12.5" cy="12.5" r="4"/>
+                            </svg>
+                        `;
+                    } else {
+                        // White marker with transparent hole for other attractions
+                        el.style.width = '25px';
+                        el.style.height = '41px';
+                        el.innerHTML = `
+                            <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <mask id="hole-${attraction.id}">
+                                        <rect width="25" height="41" fill="white"/>
+                                        <circle cx="12.5" cy="12.5" r="4" fill="black"/>
+                                    </mask>
+                                </defs>
+                                <path fill="white" stroke="#d1d5db" stroke-width="1" mask="url(#hole-${attraction.id})" d="M12.5 0C5.6 0 0 5.6 0 12.5c0 5.6 12.5 28.5 12.5 28.5s12.5-22.9 12.5-28.5C25 5.6 19.4 0 12.5 0z"/>
+                            </svg>
+                        `;
+                    }
 
                     // Update popup content for unselected marker
                     const popup = marker.getPopup();

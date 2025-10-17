@@ -4,6 +4,7 @@ export interface Attraction {
     address: string;
     latitude: number;
     longitude: number;
+    customColor?: string; // Nowe pole dla niestandardowego koloru
 }
 
 export const viennaAttractions: Attraction[] = [
@@ -90,5 +91,13 @@ export const viennaAttractions: Attraction[] = [
         address: "Karlsplatz 8, 1040 Wien",
         latitude: 48.199311,
         longitude: 16.370782
+    },
+    {
+        id: 13,
+        name: "Dworzec Autobusowy",
+        address: "48°11'38\"N 16°24'33\"E",
+        latitude: 48.194444, // 48°11'38"N converted to decimal
+        longitude: 16.409167, // 16°24'33"E converted to decimal
+        customColor: 'yellow'
     }
 ];
