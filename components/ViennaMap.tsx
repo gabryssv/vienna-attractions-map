@@ -19,6 +19,8 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
     const routeLayer = useRef<string | null>(null);
     const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
     const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+    const [selectedRouteIndex, setSelectedRouteIndex] = useState(0); // 0 = główna trasa, 1+ = alternatywne
+    const [allRoutes, setAllRoutes] = useState<RouteResult[]>([]); // Przechowuje wszystkie dostępne trasy
 
     // Funkcja do mapowania kolorów dla różnych typów transportu
     const getTransportColor = (vehicleType: string): string => {
@@ -173,76 +175,95 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
 
             if (!route) {
                 console.error('No route found');
-                // Fall back to straight line if no public transport route available
                 displayFallbackRoute(pointA, pointB);
                 return;
             }
 
+            // Przechowuj wszystkie trasy (główną + alternatywne)
+            const allAvailableRoutes = [route, ...(route.alternatives || [])];
+            setAllRoutes(allAvailableRoutes);
+            setSelectedRouteIndex(0); // Wybierz pierwszą trasę domyślnie
             setRouteInfo(route);
 
-            const routeId = 'transit-route';
-
-            // Remove existing route
-            if (routeLayer.current) {
-                try {
-                    map.current.removeLayer(routeLayer.current);
-                    map.current.removeSource(routeLayer.current);
-                } catch (error) {
-                    console.warn('Error removing existing route:', error);
-                }
-            }
-
-            // Decode Google's polyline format for MapLibre GL
-            const coordinates = googleDirectionsService.decodePolyline(route.polyline);
-
-            // Add route to map
-            const routeData = {
-                type: 'Feature' as const,
-                properties: {
-                    duration: route.duration,
-                    distance: route.distance,
-                },
-                geometry: {
-                    type: 'LineString' as const,
-                    coordinates: coordinates
-                }
-            };
-
-            map.current.addSource(routeId, {
-                type: 'geojson',
-                data: routeData
-            });
-
-            map.current.addLayer({
-                id: routeId,
-                type: 'line',
-                source: routeId,
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#3b82f6',
-                    'line-width': 4,
-                    'line-opacity': 0.8
-                }
-            });
-
-            routeLayer.current = routeId;
-
-            // Fit map to show the route
-            const bounds = new maplibregl.LngLatBounds();
-            coordinates.forEach(coord => bounds.extend(coord as [number, number]));
-            map.current.fitBounds(bounds, { padding: 50 });
+            displayRouteOnMap(route);
 
         } catch (error) {
             console.error('Error fetching route:', error);
-            // Fall back to straight line on error
             displayFallbackRoute(pointA, pointB);
         } finally {
             setIsLoadingRoute(false);
         }
     }, []);
+
+    // Nowa funkcja do wyświetlania trasy na mapie
+    const displayRouteOnMap = useCallback((route: RouteResult) => {
+        if (!map.current) return;
+
+        const routeId = 'transit-route';
+
+        // Remove existing route
+        if (routeLayer.current) {
+            try {
+                map.current.removeLayer(routeLayer.current);
+                map.current.removeSource(routeLayer.current);
+            } catch (error) {
+                console.warn('Error removing existing route:', error);
+            }
+        }
+
+        // Decode Google's polyline format for MapLibre GL
+        const coordinates = googleDirectionsService.decodePolyline(route.polyline);
+
+        // Add route to map
+        const routeData = {
+            type: 'Feature' as const,
+            properties: {
+                duration: route.duration,
+                distance: route.distance,
+            },
+            geometry: {
+                type: 'LineString' as const,
+                coordinates: coordinates
+            }
+        };
+
+        map.current.addSource(routeId, {
+            type: 'geojson',
+            data: routeData
+        });
+
+        map.current.addLayer({
+            id: routeId,
+            type: 'line',
+            source: routeId,
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': selectedRouteIndex === 0 ? '#3b82f6' : '#8b5cf6', // Niebieska dla głównej, fioletowa dla alternatywnych
+                'line-width': 4,
+                'line-opacity': 0.8
+            }
+        });
+
+        routeLayer.current = routeId;
+
+        // Fit map to show the route
+        const bounds = new maplibregl.LngLatBounds();
+        coordinates.forEach(coord => bounds.extend(coord as [number, number]));
+        map.current.fitBounds(bounds, { padding: 50 });
+    }, [selectedRouteIndex]);
+
+    // Funkcja do wyboru alternatywnej trasy
+    const selectAlternativeRoute = useCallback((routeIndex: number) => {
+        if (routeIndex >= 0 && routeIndex < allRoutes.length) {
+            setSelectedRouteIndex(routeIndex);
+            const selectedRoute = allRoutes[routeIndex];
+            setRouteInfo(selectedRoute);
+            displayRouteOnMap(selectedRoute);
+        }
+    }, [allRoutes, displayRouteOnMap]);
 
     // Updated useEffect for route handling - always show route panel
     useEffect(() => {
@@ -591,21 +612,91 @@ export default function ViennaMap({ selectedAttraction, routePointA, routePointB
                         ))}
                     </div>
 
-                    {/* Alternative routes if available */}
-                    {routeInfo.alternatives && routeInfo.alternatives.length > 0 && (
+                    {/* Interactive Alternative Routes */}
+                    {allRoutes.length > 1 && (
                         <div className="mt-3 pt-3 border-t border-neutral-700">
-                            <p className="text-neutral-400 text-xs mb-2">🔄 Alternatywne trasy:</p>
-                            {routeInfo.alternatives.slice(0, 2).map((alt, index) => (
-                                <div key={index} className="text-xs text-neutral-500 mb-1 p-1 bg-neutral-800 rounded">
-                                    Opcja {index + 2}: {alt.duration} • {alt.distance}
-                                    {alt.steps.filter(s => s.transitDetails).map((s, i) => (
-                                        <span key={i} className="ml-2">
-                                            {getTransportIcon(s.transitDetails?.vehicleType || 'OTHER')}
-                                            {s.transitDetails?.line}
-                                        </span>
-                                    ))}
+                            <p className="text-neutral-400 text-xs mb-2 font-bold">🔄 Wybierz trasę:</p>
+                            <div className="space-y-1">
+                                {allRoutes.map((route, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => selectAlternativeRoute(index)}
+                                        className={`w-full text-left p-2 rounded-lg text-xs transition-all duration-200 ${
+                                            selectedRouteIndex === index
+                                                ? 'bg-blue-600 text-white border-2 border-blue-400'
+                                                : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-600'
+                                        }`}
+                                    >
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="font-bold">
+                                                {index === 0 ? '🥇 Najszybsza' : `🚌 Opcja ${index + 1}`}
+                                            </span>
+                                            <div className="text-xs">
+                                                {selectedRouteIndex === index && <span className="text-blue-200">✓ Wybrana</span>}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span>⏱️ {route.duration}</span>
+                                            <span>📏 {route.distance}</span>
+                                        </div>
+                                        
+                                        {/* Transport icons for this route */}
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <span className="text-neutral-400">Środki:</span>
+                                            {route.steps
+                                                .filter(s => s.transitDetails)
+                                                .slice(0, 4) // Max 4 ikony
+                                                .map((s, i) => (
+                                                    <span 
+                                                        key={i} 
+                                                        className="text-sm"
+                                                        style={{ color: s.transitDetails?.color || getTransportColor(s.transitDetails?.vehicleType || 'OTHER') }}
+                                                    >
+                                                        {getTransportIcon(s.transitDetails?.vehicleType || 'OTHER')}
+                                                        {s.transitDetails?.line && (
+                                                            <span className="text-xs ml-0.5">{s.transitDetails.line}</span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            {route.steps.filter(s => s.transitDetails).length > 4 && (
+                                                <span className="text-xs text-neutral-500">...</span>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Route complexity indicator */}
+                                        <div className="text-xs text-neutral-400 mt-1">
+                                            {route.steps.filter(s => s.transitDetails).length === 1 ? 
+                                                '🟢 Bez przesiadek' : 
+                                                `🟡 ${route.steps.filter(s => s.transitDetails).length - 1} przesiadek`
+                                            }
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {/* Quick comparison */}
+                            <div className="mt-2 p-2 bg-neutral-900 rounded text-xs">
+                                <div className="text-neutral-400 mb-1">💡 Porównanie:</div>
+                                <div className="grid grid-cols-3 gap-1 text-center">
+                                    <div>
+                                        <div className="text-green-400">Najszybsza</div>
+                                        <div className="text-white">{allRoutes[0]?.duration}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-blue-400">Najkrótsza</div>
+                                        <div className="text-white">
+                                            {allRoutes.sort((a, b) => 
+                                                parseFloat(a.distance) - parseFloat(b.distance)
+                                            )[0]?.distance}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-yellow-400">Opcje</div>
+                                        <div className="text-white">{allRoutes.length}</div>
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     )}
 
